@@ -29,7 +29,7 @@ best <- function(model, ...)
                     cbind(p = as.numeric(rownames(which)), which, adjr2))
     
     return(subsets)
-}  
+}
 ##############################################
 
 
@@ -69,38 +69,55 @@ melted_cormat_byValue_price <- melted_cormat_byValue[melted_cormat_byValue$Var1=
                                                          melted_cormat_byValue$Var2=='price',]
 
 
-## boxplots for some high-correlated variables and price
-boxplot_p_sl <- boxplot(price~sqft_living, data=myD, 
-                 main="Price vs. Sqft_living", xlab="Sqft_living", ylab="Price")
-boxplot_p_b <- boxplot(price~bathrooms, data=myD, 
-                    col=(c("gold","darkgreen")),
-                    main="Price vs. Bathrooms", xlab="Bathrooms", ylab="Price")
-boxplot_p_g <- boxplot(price~grade, data=myD, 
-                       col=(c("gold","darkgreen")),
-                       main="Price vs. Grade", xlab="Grade", ylab="Price")
+
+
 
 ## full linear model
 full.model <- lm(price~., data = myD)
 summary(full.model)
-# coef of sqft_basement is NA
+# coef of sqft_basement is NA, and p-value of floor > 0.05
 # R^2 = 0.6997, adR^2 = 0.6995
-fit_drop_basement <- lm(price~.-sqft_basement, data = myD)
-summary(fit_drop_basement)
+fit_drop_basement_floors <- lm(price~.-sqft_basement-floors, data = myD)
+summary(fit_drop_basement_floors)
 # R^2 = 0.6997, adR^2 = 0.6995
 
 ## simplified model
 sim_fit <- lm(price~sqft_living+grade+sqft_above+sqft_living15+bathrooms, data = myD)
 summary(sim_fit)
-# R^2 = 0.5442, adR^2 = 0.5441
+# R^2 = 0.5442, adjR^2 = 0.5441
 # select model by adjusted R^2
-# fit2 <- lm(Y~X1+X2+X3+I(X1^2)+I(X2^2)+I(X3^2)+I(X1*X2)+I(X1*X3)+I(X2*X3), data = myData1)
-result <- as.data.frame(round(best(fit_drop_basement, nbest = 6), 4))
+result <- as.data.frame(round(best(fit_drop_basement, nbest = 3), 4))
 result <- result[order(-abs(result$adjr2)),] 
 head(result)
 # So best model by adjusted R^2 is 
 # price ~ bedrooms + bathrooms + sqft_living + waterfront + view + grade + yr_built + lat
 # top models by adjusted R^2 should contain 
-# bedrooms, bathrooms, sqft_living, waterfront, view, grade, yr_built and lat.
+# sqft_living, waterfront, view, grade, yr_built and lat.
+
+## boxplots for some high-correlated variables and price
+boxplot_p_sl <- boxplot(price~sqft_living, data=myD, 
+                        main="Price vs. Sqft_living", xlab="Sqft_living", ylab="Price")
+boxplot_p_b <- boxplot(price~bathrooms, data=myD, 
+                       col=(c("gold","darkgreen")),
+                       main="Price vs. Bathrooms", xlab="Bathrooms", ylab="Price")
+boxplot_p_g <- boxplot(price~grade, data=myD, 
+                       col=(c("gold","darkgreen")),
+                       main="Price vs. Grade", xlab="Grade", ylab="Price")
+#The relationship looks a bit non-linear here
+
+## log price
+myD$logP <- log(myD$price)
+myD <- myD[,-1]
+log_price_model <- lm(logP~.-sqft_basement, data = myD)
+summary(log_price_model)
+# R^2 = 0.7704, adR^2 = 0.7703
+result <- as.data.frame(round(best(log_price_model, nbest = 3), 4))
+result <- result[order(-abs(result$adjr2)),] 
+head(result)
+# So best model by adjusted R^2 is 
+# logP ~ bathrooms + sqft_living + view + condition + grade + yr_built + lat + sqft_living15
+# top models by adjusted R^2 should contain 
+# sqft_living, view, grade, yr_built, lat, and sqft_living15.
 
 ## model with second-order terms
 second_order_fit <- NULL
