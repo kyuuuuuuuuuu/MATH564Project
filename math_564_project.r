@@ -134,4 +134,6 @@ alpha = 0.05
 zStar = fit.coef[8,1]/fit.coef[8,2]
 zStar <= qnorm(1-alpha/2)
 fit.coef[4,4]
+# Ho: beta=0
+# Ha: beta!=0
 # zstar > qnorm, therefore we conclude H_a that beta of view is not zero. the p-value of this test is very small.
