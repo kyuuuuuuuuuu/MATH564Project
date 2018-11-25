@@ -120,13 +120,18 @@ head(result)
 # sqft_living, view, grade, yr_built, lat, and sqft_living15.
 
 ## model with second-order terms
-second_order_fit <- NULL
+# second_order_fit <- NULL
 
 ## backward variable selection
-model.null <- lm(price ~ 1, data = myD)
-model.backward <- step(fit_drop_basement, scope = list(lower = model.null), 
-                       direction = "backward", test = "Chisq", data = myD, trace = F)
-model.backward$formula
+# model.null <- lm(price ~ 1, data = myD)
+# model.backward <- step(fit_drop_basement, scope = list(lower = model.null), 
+#                        direction = "backward", test = "Chisq", data = myD, trace = F)
+# model.backward$formula
 
-
-
+## wald test for view
+fit.coef = summary(log_price_model)$coef
+alpha = 0.05
+zStar = fit.coef[8,1]/fit.coef[8,2]
+zStar <= qnorm(1-alpha/2)
+fit.coef[4,4]
+# zstar > qnorm, therefore we conclude H_a that beta of view is not zero. the p-value of this test is very small.
