@@ -86,9 +86,9 @@ sim_fit <- lm(price~sqft_living+grade+sqft_above+sqft_living15+bathrooms, data =
 summary(sim_fit)
 # R^2 = 0.5442, adjR^2 = 0.5441
 # select model by adjusted R^2
-result <- as.data.frame(round(best(fit_drop_basement, nbest = 3), 4))
-result <- result[order(-abs(result$adjr2)),] 
-head(result)
+result_sim_fit <- as.data.frame(round(best(fit_drop_basement_floors, nbest = 3), 4))
+result_sim_fit <- result_sim_fit[order(-abs(result_sim_fit$adjr2)),] 
+head(result_sim_fit)
 # So best model by adjusted R^2 is 
 # price ~ bedrooms + bathrooms + sqft_living + waterfront + view + grade + yr_built + lat
 # top models by adjusted R^2 should contain 
@@ -111,9 +111,9 @@ myD <- myD[,-1]
 log_price_model <- lm(logP~.-sqft_basement, data = myD)
 summary(log_price_model)
 # R^2 = 0.7704, adR^2 = 0.7703
-result <- as.data.frame(round(best(log_price_model, nbest = 3), 4))
-result <- result[order(-abs(result$adjr2)),] 
-head(result)
+result_log <- as.data.frame(round(best(log_price_model, nbest = 3), 4))
+result_log <- result_log[order(-abs(result_log$adjr2)),] 
+head(result_log)
 # So best model by adjusted R^2 is 
 # logP ~ bathrooms + sqft_living + view + condition + grade + yr_built + lat + sqft_living15
 # top models by adjusted R^2 should contain 
@@ -121,12 +121,6 @@ head(result)
 
 ## model with second-order terms
 # second_order_fit <- NULL
-
-## backward variable selection
-# model.null <- lm(price ~ 1, data = myD)
-# model.backward <- step(fit_drop_basement, scope = list(lower = model.null), 
-#                        direction = "backward", test = "Chisq", data = myD, trace = F)
-# model.backward$formula
 
 ## wald test for view
 fit.coef = summary(log_price_model)$coef
@@ -137,3 +131,28 @@ fit.coef[4,4]
 # Ho: beta=0
 # Ha: beta!=0
 # zstar > qnorm, therefore we conclude H_a that beta of view is not zero. the p-value of this test is very small.
+
+## AIC selection
+model.null <- lm(logP~.-sqft_basement, data = myD)
+log_price_model.AIC <- stepAIC(log_price_model, scope = list(upper = log_price_model, lower = model.null), trace = FALSE)
+log_price_model.AIC$formula
+#BIC
+log_price_model.BIC <- step(log_price_model, direction = "both", k=log(nrow(myD)))
+log_price_model.BIC$formula
+
+## VIF
+library(car)
+vif(log_price_model)
+
+# ## CV
+# library(caret)
+# folds = createFolds()
+# set.seed(999)
+# inTrain <- createDataPartition(y = myD[,"logP"], list = FALSE, p = .8)
+# train <- myD[inTrain,]
+# test <- myD[-inTrain,]
+# cv = lapply(folds, function(x){
+#     training_fold = train[-x,]
+#     test_fold = training_fold[x,]
+#     
+# })
