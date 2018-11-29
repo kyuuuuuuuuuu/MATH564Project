@@ -22,11 +22,20 @@ reorder_cormat <- function(cormat){
 }
 
 # select best model by adj R^2
-best <- function(model, ...) 
+best_adjr2 <- function(model,...) 
 {
     subsets <- regsubsets(formula(model), model.frame(model), ...)
     subsets <- with(summary(subsets),
                     cbind(p = as.numeric(rownames(which)), which, adjr2))
+    
+    return(subsets)
+}
+# select best model by mallow Cp
+best_cp <- function(model,...) 
+{
+    subsets <- regsubsets(formula(model), model.frame(model), ...)
+    subsets <- with(summary(subsets),
+                    cbind(p = as.numeric(rownames(which)), which, cp))
     
     return(subsets)
 }
@@ -86,7 +95,7 @@ sim_fit <- lm(price~sqft_living+grade+sqft_above+sqft_living15+bathrooms, data =
 summary(sim_fit)
 # R^2 = 0.5442, adjR^2 = 0.5441
 # select model by adjusted R^2
-result_sim_fit <- as.data.frame(round(best(fit_drop_basement_floors, nbest = 3), 4))
+result_sim_fit <- as.data.frame(round(best_adjr2(fit_drop_basement_floors, nbest = 3), 4))
 result_sim_fit <- result_sim_fit[order(-abs(result_sim_fit$adjr2)),] 
 head(result_sim_fit)
 # So best model by adjusted R^2 is 
@@ -111,7 +120,7 @@ myD <- myD[,-1]
 log_price_model <- lm(logP~.-sqft_basement, data = myD)
 summary(log_price_model)
 # R^2 = 0.7704, adR^2 = 0.7703
-result_log <- as.data.frame(round(best(log_price_model, nbest = 3), 4))
+result_log <- as.data.frame(round(best_adjr2(log_price_model, nbest = 3), 4))
 result_log <- result_log[order(-abs(result_log$adjr2)),] 
 head(result_log)
 # So best model by adjusted R^2 is 
@@ -119,8 +128,10 @@ head(result_log)
 # top models by adjusted R^2 should contain 
 # sqft_living, view, grade, yr_built, lat, and sqft_living15.
 
-## model with second-order terms
-# second_order_fit <- NULL
+## select with Cp
+result_log_cp <- as.data.frame(round(best_cp(log_price_model, nbest = 3), 4))
+result_log_cp <- result_log_cp[order(-abs(result_log_cp$cp)),] 
+head(result_log_cp)
 
 ## wald test for view
 fit.coef = summary(log_price_model)$coef
@@ -137,22 +148,13 @@ model.null <- lm(logP~.-sqft_basement, data = myD)
 log_price_model.AIC <- stepAIC(log_price_model, scope = list(upper = log_price_model, lower = model.null), trace = FALSE)
 log_price_model.AIC$formula
 #BIC
-log_price_model.BIC <- step(log_price_model, direction = "both", k=log(nrow(myD)))
+log_price_model.BIC <- step(log_price_model, scope = list(upper = log_price_model, lower = model.null), direction = "backward", k=log(nrow(myD)))
 log_price_model.BIC$formula
 
 ## VIF
 library(car)
 vif(log_price_model)
+max(vif(log_price_model)) > 10
+mean(vif(log_price_model))
+# there exists multicollinearity in the model.
 
-# ## CV
-# library(caret)
-# folds = createFolds()
-# set.seed(999)
-# inTrain <- createDataPartition(y = myD[,"logP"], list = FALSE, p = .8)
-# train <- myD[inTrain,]
-# test <- myD[-inTrain,]
-# cv = lapply(folds, function(x){
-#     training_fold = train[-x,]
-#     test_fold = training_fold[x,]
-#     
-# })
