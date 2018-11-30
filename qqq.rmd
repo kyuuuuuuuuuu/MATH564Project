@@ -1,3 +1,9 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
 # Math 564 project
 library(ggplot2)
 library(reshape2)
@@ -139,28 +145,27 @@ head(result_log)
 # sqft_living, view, grade, yr_built, lat, and sqft_living15.
 
 ## select with Cp
-result_log_cp <- as.data.frame(round(best_cp(log_price_model, nbest = 4), 6))
+result_log_cp <- as.data.frame(round(best_cp(log_price_model, nbest = 3), 4))
 result_log_cp <- result_log_cp[order(abs(result_log_cp$cp)),] 
 head(result_log_cp)
-tail(result_log_cp)
 
 ## wald test for view
-# fit.coef = summary(log_price_model)$coef
-# alpha = 0.05
-# zStar = fit.coef[8,1]/fit.coef[8,2]
-# zStar <= qnorm(1-alpha/2)
-# fit.coef[4,4]
+fit.coef = summary(log_price_model)$coef
+alpha = 0.05
+zStar = fit.coef[8,1]/fit.coef[8,2]
+zStar <= qnorm(1-alpha/2)
+fit.coef[4,4]
 # Ho: beta=0
 # Ha: beta!=0
 # zstar > qnorm, therefore we conclude H_a that beta of view is not zero. the p-value of this test is very small.
 
 ## AIC selection
-# model.null <- lm(logP~.-sqft_basement, data = myD)
-# log_price_model.AIC <- stepAIC(log_price_model, scope = list(upper = log_price_model, lower = model.null), trace = FALSE)
-# log_price_model.AIC$formula
+model.null <- lm(logP~.-sqft_basement, data = myD)
+log_price_model.AIC <- stepAIC(log_price_model, scope = list(upper = log_price_model, lower = model.null), trace = FALSE)
+log_price_model.AIC$formula
 #BIC
-# log_price_model.BIC <- step(log_price_model, scope = list(upper = log_price_model, lower = model.null), direction = "backward", k=log(nrow(myD)))
-# log_price_model.BIC$formula
+log_price_model.BIC <- step(log_price_model, scope = list(upper = log_price_model, lower = model.null), direction = "backward", k=log(nrow(myD)))
+log_price_model.BIC$formula
 
 ## VIF
 library(car)
@@ -171,3 +176,5 @@ mean(vif(log_price_model))
 vif(fit_drop_basement_floors)
 max(vif(fit_drop_basement_floors)) > 10
 mean(vif(fit_drop_basement_floors))
+
+```
